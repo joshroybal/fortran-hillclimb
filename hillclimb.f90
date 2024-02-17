@@ -230,7 +230,6 @@ module hillclimb
                             key = hikey
                         end if
                     end do
-                    key = hikey
                 end do
             end do
         end subroutine
