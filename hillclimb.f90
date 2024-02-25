@@ -48,6 +48,7 @@ module hillclimb
             do i = 1 , C
                 rnk(i) = i
             end do
+            ! crummy selection sort, but hey it's only C = 26
             do i = 1, C - 1
                 maxidx = i
                 do j = i + 1, C
@@ -65,19 +66,12 @@ module hillclimb
             ! function result location
             real :: ioc
             ! local data
-            integer :: i
-            real :: acc
             integer, dimension(C) :: x
             ! processing
             ! count letters
             x = ltrcnt(n, a)
             ! compute monographic index of coincidence
-            acc = 0.0
-            do i = 1, C
-                acc = acc + real(x(i))*(x(i)-1.0)
-            end do
-            acc = acc / (real(n)*(n-1) / C)
-            ioc = acc
+            ioc = sum(real(x) * (x - 1)) / (real(n) * (n - 1) / C)
         end function
 
         ! function returns english text correlation as real location
@@ -88,32 +82,20 @@ module hillclimb
             ! function result location
             real :: cor
             ! local data
-            integer :: i
-            real :: acc
-            real, dimension(C) :: frq, eng = (/.0781,.0128,.0293,.0411,&
-            .1305,.0288,.0139,.0565,.0677,.0023,.0042,.0360,.0262,.0728,&
-            .0821,.0215,.0014,.0664,.0646,.0902,.0277,.0100,.0149,.0030,&
-            .0151,.0009/)
+            real, dimension(C), parameter :: ENG = (/.0781,.0128,.0293,.0411,&
+            .1305,.0288,.0139,.0565,.0677,.0023,.0042,.0360,.0262,.0728,.0821,&
+            .0215,.0014,.0664,.0646,.0902,.0277,.0100,.0149,.0030,.0151,.0009/)
             ! processing
-            frq = ltrfrq(n, a)
-            acc = 0
-            do i = 1, C
-                acc = acc + frq(i) * eng(i)
-            end do
-            cor = acc
+            cor = sum(ltrfrq(n, a) * ENG)
         end function
 
         ! load english digraph frequencies into two dimensional memory banks
         function dgreng() result(a)
             ! function result location
             real, dimension(C,C) :: a
-            ! local data
-            integer :: j
             ! processing
             open (7,file='digraph.dat',status='old',action='read')
-            do j = 1, C
-                read (7,*) a(:C,j)
-            end do
+            read (7,*) a
             close (7)
         end function
 
@@ -152,19 +134,11 @@ module hillclimb
             ! result location
             real :: ioc
             ! local data
-            integer :: i, j
+            !integer :: i, j
             integer, dimension(C,C) :: cnt
-            real :: acc
             ! processing
             cnt = dgrcnt(n, a)
-            acc = 0.0
-            do j = 1, C
-                do i = 1, C
-                    acc = acc + real(cnt(i,j) - 1) * (cnt(i,j) - 2)
-                end do
-            end do
-            acc = acc / (real(n - 1) * (n - 2) / 676.0)
-            ioc = acc
+            ioc = sum(real(cnt-1)*(cnt-2))/(real(n-1)*(n-2)/676)
         end function
 
         ! function returns english digraphical correlation
@@ -174,23 +148,11 @@ module hillclimb
             integer, intent(in), dimension(n) :: a
             ! function result location
             real :: cor
-            ! local data
-            integer :: i, j
-            real :: acc
-            real, dimension(C,C) :: eng, frq
             ! processing
-            eng = dgreng()
-            frq = dgrfrq(n, a)
-            acc = 0.0
-            do j = 1, C
-                do i = 1, C
-                    acc = acc + real(eng(i,j)) * real(frq(i,j))
-                end do
-            end do
-            cor = 676.0 * acc
+            cor = 676 * sum(dgreng() * dgrfrq(n, a))
         end function
 
-        subroutine climb(n, a, str, hi, hikey)
+        subroutine clmb(n, a, str, hi, hikey)
             ! dummy arguments
             integer, intent(in) :: n
             integer, intent(in), dimension(n) :: a
@@ -246,9 +208,9 @@ module hillclimb
             real, dimension(3) :: cor
             integer, dimension(C,3) :: key
             ! processing
-            call climb(n, ciphertext, 'ETOANIRSHDLCFUMPYWGBVKXJQZ', cor(1), key(:C,1))
-            call climb(n, ciphertext, 'ETAONISRHLDCUPFMWYBGVKQXJZ', cor(2), key(:C,2))
-            call climb(n, ciphertext, 'ETAOINSHRDLUCWMFYGPBVKXJQZ', cor(3), key(:C,3))
+            call clmb(n, ciphertext, 'ETOANIRSHDLCFUMPYWGBVKXJQZ', cor(1), key(:C,1))
+            call clmb(n, ciphertext, 'ETAONISRHLDCUPFMWYBGVKQXJZ', cor(2), key(:C,2))
+            call clmb(n, ciphertext, 'ETAOINSHRDLUCWMFYGPBVKXJQZ', cor(3), key(:C,3))
             hi = 0
             do i = 1, 3
                 if (cor(i) .gt. hi) then
