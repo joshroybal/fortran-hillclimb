@@ -3,8 +3,6 @@ module hillclimb
     implicit none
     ! parameters
     integer, parameter :: C = 26
-    ! from frequency table
-    character (len=C), parameter :: ordstr = 'ETOANIRSHDLCFUMPYWGBVKXJQZ'
     contains
         ! function returns letter counts of text
         function ltrcnt(n, a) result(cnt)
